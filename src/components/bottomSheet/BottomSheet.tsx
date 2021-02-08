@@ -31,6 +31,7 @@ import {
   usePropsValidator,
   useNormalizedSnapPoints,
   useReactiveSharedValue,
+  useKeyboard,
 } from '../../hooks';
 import {
   BottomSheetInternalProvider,
@@ -41,8 +42,14 @@ import BottomSheetBackdropContainer from '../bottomSheetBackdropContainer';
 import BottomSheetHandleContainer from '../bottomSheetHandleContainer';
 import BottomSheetBackgroundContainer from '../bottomSheetBackgroundContainer';
 import BottomSheetDraggableView from '../bottomSheetDraggableView';
-// import BottomSheetDebugView from '../bottomSheetDebugView';
-import { GESTURE, ANIMATION_STATE, WINDOW_HEIGHT } from '../../constants';
+import BottomSheetDebugView from '../bottomSheetDebugView';
+import {
+  GESTURE,
+  ANIMATION_STATE,
+  WINDOW_HEIGHT,
+  KEYBOARD_STATE,
+  KEYBOARD_EASING_MAPPER,
+} from '../../constants';
 import {
   DEFAULT_ANIMATION_EASING,
   DEFAULT_ANIMATION_DURATION,
@@ -176,6 +183,14 @@ const BottomSheetComponent = forwardRef<BottomSheet, BottomSheetProps>(
       flashScrollableIndicators,
     } = useScrollable();
 
+    // keyboard
+    const {
+      state: keyboardState,
+      height: keyboardHeight,
+      animationDuration: keyboardAnimationDuration,
+      animationEasing: keyboardAnimationEasing,
+    } = useKeyboard();
+
     // normalize snap points
     const snapPoints = useNormalizedSnapPoints(
       _providedSnapPoints,
@@ -253,6 +268,24 @@ const BottomSheetComponent = forwardRef<BottomSheet, BottomSheetProps>(
 
     //#region gesture interaction / animation
     // variables
+    const animatedKeyboardOffset = useDerivedValue(
+      () =>
+        withTiming(
+          keyboardState.value === KEYBOARD_STATE.SHOWN
+            ? keyboardHeight.value * -1
+            : 0,
+          {
+            duration: keyboardAnimationDuration.value,
+            easing: KEYBOARD_EASING_MAPPER[keyboardAnimationEasing.value],
+          }
+        ),
+      [
+        keyboardState,
+        keyboardHeight,
+        keyboardAnimationDuration,
+        keyboardAnimationEasing,
+      ]
+    );
     const animationState = useSharedValue(ANIMATION_STATE.UNDETERMINED);
     const animatedSnapPoints = useReactiveSharedValue(snapPoints);
     const animatedPosition = useSharedValue(initialPosition);
@@ -382,6 +415,9 @@ const BottomSheetComponent = forwardRef<BottomSheet, BottomSheetProps>(
       const newSnapPoint = snapPoints[snapPoints.length - 1];
       runOnUI(animateToPoint)(newSnapPoint);
     }, [animateToPoint, snapPoints]);
+    const handleFullScreenExpand = useCallback(() => {
+      runOnUI(animateToPoint)(topInset);
+    }, [animateToPoint, topInset]);
     const handleCollapse = useCallback(() => {
       const newSnapPoint = snapPoints[0];
       runOnUI(animateToPoint)(newSnapPoint);
@@ -389,6 +425,7 @@ const BottomSheetComponent = forwardRef<BottomSheet, BottomSheetProps>(
     useImperativeHandle(ref, () => ({
       snapTo: handleSnapTo,
       expand: handleExpand,
+      fullScreenExpand: handleFullScreenExpand,
       collapse: handleCollapse,
       close: handleClose,
     }));
@@ -437,10 +474,17 @@ const BottomSheetComponent = forwardRef<BottomSheet, BottomSheetProps>(
       () => ({
         snapTo: handleSnapTo,
         expand: handleExpand,
+        fullScreenExpand: handleFullScreenExpand,
         collapse: handleCollapse,
         close: handleClose,
       }),
-      [handleSnapTo, handleExpand, handleCollapse, handleClose]
+      [
+        handleSnapTo,
+        handleExpand,
+        handleFullScreenExpand,
+        handleCollapse,
+        handleClose,
+      ]
     );
     //#endregion
 
@@ -451,12 +495,20 @@ const BottomSheetComponent = forwardRef<BottomSheet, BottomSheetProps>(
         transform: [
           {
             translateY: isLayoutCalculated
-              ? animatedPosition.value
+              ? Math.max(
+                  animatedPosition.value + animatedKeyboardOffset.value,
+                  topInset
+                )
               : safeContainerHeight,
           },
         ],
       };
-    }, [safeContainerHeight, isLayoutCalculated]);
+    }, [
+      safeContainerHeight,
+      isLayoutCalculated,
+      animatedKeyboardOffset,
+      topInset,
+    ]);
     const containerStyle = useMemo(
       () => [_providedStyle, styles.container, containerAnimatedStyle],
       [_providedStyle, containerAnimatedStyle]
@@ -649,12 +701,16 @@ const BottomSheetComponent = forwardRef<BottomSheet, BottomSheetProps>(
               />
             </BottomSheetInternalProvider>
           </Animated.View>
-          {/* <BottomSheetDebugView
+          <BottomSheetDebugView
             values={{
               animatedIndex,
               animatedPosition,
+              contentPanGestureState,
+              keyboardState,
+              keyboardHeight,
+              keyboardAnimationDuration,
             }}
-          /> */}
+          />
         </BottomSheetContainer>
       </BottomSheetProvider>
     );
