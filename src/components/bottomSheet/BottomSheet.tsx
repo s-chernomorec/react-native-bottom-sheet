@@ -104,6 +104,10 @@ const BottomSheetComponent = forwardRef<BottomSheet, BottomSheetProps>(
       animatedPosition: _providedAnimatedPosition,
       animatedIndex: _providedAnimatedIndex,
 
+      // gestures
+      simultaneousHandlers: _providedSimultaneousHandlers,
+      waitFor: _providedWaitFor,
+
       // callbacks
       onChange: _providedOnChange,
       onAnimate: _providedOnAnimate,
@@ -402,6 +406,8 @@ const BottomSheetComponent = forwardRef<BottomSheet, BottomSheetProps>(
         contentPanGestureVelocityY,
         scrollableContentOffsetY,
         decelerationRate,
+        simultaneousHandlers: _providedSimultaneousHandlers,
+        waitFor: _providedWaitFor,
         setScrollableRef: handleSettingScrollableRef,
         removeScrollableRef,
       }),
@@ -416,6 +422,8 @@ const BottomSheetComponent = forwardRef<BottomSheet, BottomSheetProps>(
         handlePanGestureVelocityY,
         decelerationRate,
         scrollableContentOffsetY,
+        _providedSimultaneousHandlers,
+        _providedWaitFor,
         handleSettingScrollableRef,
         removeScrollableRef,
       ]

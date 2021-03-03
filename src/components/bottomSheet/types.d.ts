@@ -1,11 +1,12 @@
 import type React from 'react';
 import type Animated from 'react-native-reanimated';
+import type { GestureHandlerProperties } from 'react-native-gesture-handler';
 import type { State } from 'react-native-gesture-handler';
 import type { BottomSheetHandleProps } from '../bottomSheetHandle';
 import type { BottomSheetBackgroundProps } from '../bottomSheetBackground';
 import type { BottomSheetBackdropProps } from '../bottomSheetBackdrop';
 
-export type BottomSheetProps = {
+export type BottomSheetProps = Pick<GestureHandlerProperties, 'waitFor' | 'simultaneousHandlers'> & {
   // configuration
   /**
    * Initial snap index, you also could provide {`-1`} to initiate bottom sheet in closed state.

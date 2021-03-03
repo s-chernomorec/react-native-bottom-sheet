@@ -26,16 +26,32 @@ const BottomSheetDraggableViewComponent = ({
     contentPanGestureState,
     contentPanGestureTranslationY,
     contentPanGestureVelocityY,
+    simultaneousHandlers: _providedSimultaneousHandlers,
+    waitFor,
   } = useBottomSheetInternal();
 
   // variables
-  const simultaneousHandlers = useMemo(
-    () =>
-      nativeGestureRef
-        ? [containerTapGestureRef, nativeGestureRef]
-        : containerTapGestureRef,
-    [containerTapGestureRef, nativeGestureRef]
-  );
+  const simultaneousHandlers = useMemo(() => {
+    const refs = [containerTapGestureRef];
+
+    if (nativeGestureRef) {
+      refs.push(nativeGestureRef);
+    }
+
+    if (_providedSimultaneousHandlers) {
+      if (Array.isArray(_providedSimultaneousHandlers)) {
+        refs.push(..._providedSimultaneousHandlers);
+      } else {
+        refs.push(_providedSimultaneousHandlers);
+      }
+    }
+
+    return refs;
+  }, [
+    _providedSimultaneousHandlers,
+    containerTapGestureRef,
+    nativeGestureRef,
+  ]);
 
   // styles
   const containerStyle = useMemo(
@@ -83,6 +99,7 @@ const BottomSheetDraggableViewComponent = ({
       enabled={enableContentPanningGesture}
       simultaneousHandlers={simultaneousHandlers}
       shouldCancelWhenOutside={false}
+      waitFor={waitFor}
       onGestureEvent={handleGestureEvent}
       onHandlerStateChange={handleGestureEvent}
     >
